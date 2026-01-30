@@ -1,0 +1,375 @@
+import time, random, math
+
+health = 75.0
+hunger = 75.0
+thirst = 75.0
+
+unlockedCommands = ['gather', 'explore', 'science', 'craft', 'rest', 'settings', 'remind']
+
+science = 0.0
+scienceEfficiency = 1
+
+items = []
+itemRef = {'rock hatchet':[['gatherEfficiency', 'WOOD', .5]], 'wood club':[['combat', 1]]} # 'name':[[effect], [effect], [effect]]
+
+resources = {'WOOD':0, 'LEAVES':0, 'CLOTH':0, 'ROCK':0, 'ROPE':0}
+gatherEfficiency = {'WOOD':1, 'LEAVES':1, 'CLOTH':1, 'ROCK':1, 'ROPE':0}
+
+exploreEfficiency = .25
+
+currentTime = 8
+timeDetail = 'AM' # 'AM' or 'PM'
+day = 1
+year = 1
+
+currentArea = 'Eastern Forest'
+
+areas = {'Eastern Forest':[{'WOOD':5, 'LEAVES':7.5, 'ROCK':2}, 0, {'Abandoned Cottage':random.random()*100}]} # 'name':[{resources}, exploration%, {locations}]
+
+unlockedResearch = [None]
+researchTree = {'rock hatchet':[[None], 5], 'wood club':[[None], 5]} # 'name':[['required research'], #science points]
+
+unlockedRecipes = ['rope']
+recipeRef = {'rope':[{'LEAVES':[5, 'm']}, 1, 'm'], 'rock hatchet':[{'WOOD':[5, 'm'], 'ROCK':[5, 'm'], 'ROPE':[2.5, 'm']}, 1, 'i'], 'wood club':[{'WOOD':[10, 'm'], 'LEAVES':[2.5, 'm']}, 1, 'i']} # 'name':[{'required material':#amount}, #amount per recipe, 'm (if material, or) i (if item)']
+
+healthMessages = ['You\'re at death\'s door. You feel like you can\'t go on.', 'Everything hurts... you must stop the pain.', 'You are in very bad condition.', 'You\'re feeling dangerously uneasy.', 'You don\'t feel so good.', 'You could be feeling better.', 'You\'re not in your best condition.', 'You\'re feeling fine.', 'You feel great!', 'You\'re feeling better than ever!', 'You\'re feeling better than ever!']
+hungerMessages = ['You need food... you can\'t hold back your hunger.', 'You\'re starving. A sandwich would be great now.', 'You\'re pretty hungry. You should eat soon.', 'Your stomach is satisfied for now.', 'You\'re full! You wouldn\'t want to eat now.', 'You\'re full! You wouldn\'t want to eat now.']
+thirstMessages = ['You need water. You won\'t last any longer without it.', 'You\'re dehydrated. You\'ll need a drink soon.', 'You\'re a bit thirsty.', 'You don\'t feel much need for water right now.', 'You\'re well hydrated, and are nowhere near thirsty.']
+
+displayStatus = True # display status at start of turn
+textSpeed = 'instant' # system done
+statView = False # type 'stats' to see exact numbers
+
+if statView:
+    unlockedCommands.append('stats')
+
+def bprint(text, speed=1):
+    if textSpeed == 'fast':
+        print(text, end='')
+    elif textSpeed == 'instant':
+        print(text)
+    else:
+        for letter in text:
+            if letter == ' ':
+                time.sleep(.15 / speed)
+            else:
+                time.sleep(.1 / speed)
+            print(letter, end='', flush=True)
+            if letter == ' ':
+                time.sleep(.1 / speed)
+    if textSpeed != 'instant':
+        time.sleep(.5)
+        print()
+
+def shortNum(number):
+    return str(number)[:str(number).find('.') + 4]
+
+def completeResearch(research):
+    global unlockedRecipes
+    if research == 'rock hatchet':
+        unlockedRecipes.append('rock hatchet')
+    elif research == 'wood club':
+        unlockedRecipes.append('wood club')
+
+def addResources(resource, amount):
+    global resources
+    resources[resource] += amount
+    bprint('You now have '+shortNum(resources[resource])+' '+resource+'. (+'+shortNum(amount)+')')
+    if 'resources' not in unlockedCommands:
+        print()
+        bprint('You have unlocked the \'resources\' action command.')
+        bprint('Use it to see your resources.')
+        unlockedCommands.append('resources')
+
+def addItem(item):
+    global items
+    items.append(item)
+    bprint('You gained '+item+'!')
+    itemEffect(item)
+    if 'items' not in unlockedCommands:
+        print()
+        bprint('You have unlocked the \'items\' action command.')
+        bprint('Use it to see your items.')
+        unlockedCommands.append('items')
+
+def addScience(amount):
+    global science
+    science += amount
+    bprint('You gained '+shortNum(amount)+' science points.')
+
+def itemEffect(item):
+    global gatherEfficiency
+    for effect in itemRef[item]:
+        if effect[0] == 'gatherEfficiency':
+            gatherEfficiency[effect[1]] += effect[2]
+        elif effect[0] == 'combat':
+            pass # add combat stat when system is done ______________________________________________
+        else:
+            bprint('I think you forgot something...')
+
+def reverseItemEffect(item):
+    global gatherEfficiency
+    for effect in itemRef[item]:
+        if effect[0] == 'gatherEfficiency':
+            gatherEfficiency[effect[1]] -= effect[2]
+        elif effect[0] == 'combat':
+            pass # add combat stat when system is done ______________________________________________
+        else:
+            bprint('I think you forgot something...')
+
+def advanceTime(amount):
+    global currentTime, timeDetail, day, year
+    currentTime += amount
+    while currentTime >= 13:
+        currentTime -= 12
+        if timeDetail == 'AM':
+            timeDetail = 'PM'
+        else:
+            timeDetail = 'AM'
+            day += 1
+            while day >= 366:
+                day -= 365
+                year += 1
+
+def runEncounter(name):
+    if name == 'Abandoned Cottage':
+        bprint('You come across an old shack while exploring.')
+        bprint('You enter it, and discover that it is long abandoned.')
+        bprint('However, you do find useful-looking materials littered about.')
+        addResources('WOOD', 25 * (.9 + random.random() / 5))
+        addResources('CLOTH', 5 * (.9 + random.random() / 5))
+        addResources('ROPE', 10 * (.9 + random.random() / 5))
+        # add restEfficiency when able ______________________________________________
+        print()
+    else:
+        bprint('I think you forgot something...')
+
+def runTurn():
+    global resources, areas, science, unlockedResearch
+    if displayStatus:
+        bprint('Current status:')
+        bprint(str(currentTime)+':00 '+timeDetail+', day #'+str(day)+', year #'+str(year))
+        bprint(currentArea)
+        bprint(healthMessages[math.floor(health / 10)])
+        bprint(hungerMessages[math.floor(hunger / 20)])
+        bprint(thirstMessages[math.floor(hunger / 20)])
+        print()
+    while True:
+        bprint('Input action command: (or \'remind\' if you forgot your unlocked actions)')
+        action = input('> ')
+        print()
+        if action == 'gather':
+            bprint('Available resources:')
+            for resource in areas[currentArea][0].keys():
+                bprint(resource)
+            print()
+            bprint('Which resource would you like to gather?')
+            choice = ''
+            while choice not in areas[currentArea][0].keys():
+                choice = input('> ').upper().strip()
+                print()
+                if choice not in areas[currentArea][0].keys():
+                    bprint('That is not a valid resource. Try again.')
+            bprint('You spend time gathering '+choice+' from the area.')
+            increase = areas[currentArea][0][choice] * gatherEfficiency[choice] * (.9 + random.random() / 5)
+            addResources(choice, increase)
+            print()
+            addScience(.1 * (.9 + random.random() / 5))
+            gatherEfficiency[choice] += random.random() / 50
+            print()
+            break
+        elif action == 'explore':
+            bprint('You spend time exploring the area.')
+            print()
+            areas[currentArea][1] += exploreEfficiency * (.9 + random.random() / 5)
+            for location in areas[currentArea][2].keys():
+                if areas[currentArea][1] >= areas[currentArea][2][location]:
+                    runEncounter(location)
+            addScience(.5 * (.9 + random.random() / 5))
+            print()
+            break
+        elif action == 'science':
+            bprint('You have '+shortNum(science)+' science points.')
+            bprint('You can research the following:')
+            print()
+            valid = True
+            validResearch = []
+            for item in researchTree.keys():
+                for requirement in researchTree[item][0]:
+                    if requirement not in unlockedResearch:
+                        valid = False
+                if item in unlockedResearch:
+                    valid = False
+                if valid:
+                    validResearch.append(item)
+                    bprint(item.title()+': '+str(researchTree[item][1])+' science points')
+            print()
+            while True:
+                bprint('Choose what to research or type (Q)uit to quit.')
+                choice = input('> ').lower().strip()
+                if choice in validResearch:
+                    if science >= researchTree[choice][1]:
+                        break
+                    else:
+                        bprint('You don\'t have enough science points.')
+                        print()
+                elif choice[0] == 'q':
+                    break
+                else:
+                    bprint('You can\'t research that.')
+                    print()
+            if choice[0] == 'q':
+                print()
+            else:
+                print()
+                bprint('You have researched '+choice.title()+'!')
+                science -= researchTree[choice][1]
+                completeResearch(choice)
+                unlockedResearch += choice
+                print()
+                break
+        elif action == 'craft':
+            bprint('Unlocked recipes:')
+            print()
+            for recipe in unlockedRecipes:
+                recipeString = ''
+                i = 1
+                for ingredient in recipeRef[recipe][0].keys():
+                    recipeString += str(recipeRef[recipe][0][ingredient][0]) + ' '
+                    if recipeRef[recipe][0][ingredient][1] == 'm':
+                        recipeString += ingredient.upper()
+                    else:
+                        recipeString += ingredient.title()
+                    if len(recipeRef[recipe][0]) > i:
+                        recipeString += ' + '
+                    else:
+                        recipeString += ' = '
+                    i += 1
+                recipeString += str(recipeRef[recipe][1]) + ' '
+                if recipeRef[recipe][2] == 'm':
+                    recipeString += recipe.upper()
+                else:
+                    recipeString += recipe.title()
+                if recipeRef[recipe][2] == 'm':
+                    bprint(recipe.upper()+' ('+recipeString+')')
+                else:
+                    bprint(recipe.title()+' ('+recipeString+')')
+            print()
+            while True:
+                bprint('Choose a recipe to craft or type (Q)uit to quit.')
+                choice = input('> ').lower().strip()
+                if choice in unlockedRecipes:
+                    valid = True
+                    for ingredient in recipeRef[choice][0].keys():
+                        if recipeRef[choice][0][ingredient][1] == 'm':
+                            if resources[ingredient] >= recipeRef[choice][0][ingredient][0]:
+                                resources[ingredient] -= recipeRef[choice][0][ingredient][0]
+                            else:
+                                valid = False
+                        else:
+                            for i in range(recipeRef[choice][0][ingredient]):
+                                taken = 0
+                                try:
+                                    items.remove(ingredient.title())
+                                    taken += 1
+                                except ValueError:
+                                    valid = False
+                                    for i in range(taken):
+                                        items.append(ingredient.title())
+                    if valid:
+                        if recipeRef[choice][2] == 'm':
+                            bprint('You succesfully craft '+str(recipeRef[choice][1])+' '+choice.upper()+'.')
+                            addResources(choice.upper(), recipeRef[choice][1])
+                            print()
+                        else:
+                            bprint('You succesfully craft '+str(recipeRef[choice][1])+' '+choice.title()+'.')
+                            for i in range(recipeRef[choice][1]):
+                                addItem(choice.title())
+                            print()
+                        break
+                    else:
+                        bprint('You don\'t have required resources for that recipe.')
+                        print()
+                elif choice[0] == 'q':
+                    break
+                else:
+                    bprint('Invalid recipe. Try again.')
+                    print()
+            if choice[0] == 'q':
+                print()
+            else:
+                break
+        elif action == 'rest':
+            while True:
+                bprint('How many hours do you want to rest? (If you don\'t want to, type (Q)uit.)')
+                try:
+                    choice = int(input('> ').lower().strip())
+                    print()
+                except ValueError:
+                    print()
+                    bprint('Choice must be an integer. Try again.')
+                    choice = 0
+                if choice <= 0:
+                    bprint('Nope. You can\'t do that. Try again.')
+                elif choice >= 12:
+                    bprint('You could die if you rest for long periods, especially if you\'re not healthy.')
+                    while True:
+                        bprint('Are you sure that you want to rest for '+str(choice)+' hours? (Y/N)')
+                        confirm = input('> ').lower().strip()
+                        if confirm[0] == 'y' or confirm[0] == 'n':
+                            print()
+                            break
+                    if confirm[0] == 'y':
+                        break
+                else:
+                    break
+            bprint('You rest for '+str(choice)+' hours.')
+            advanceTime(choice-1)
+            print()
+        elif action == 'settings':
+            pass # ______________________________________________
+        elif action == 'remind':
+            bprint('Unlocked action commands:')
+            for i in unlockedCommands:
+                bprint('\''+i+'\'')
+            print()
+        elif action == 'resources' and 'resources' in unlockedCommands:
+            bprint('Your resources:')
+            for resource in resources.keys():
+                if resources[resource] > 0:
+                    bprint(resource+': '+shortNum(resources[resource]))
+            print()
+        elif action == 'items' and 'items' in unlockedCommands:
+            bprint('Your items:')
+            for item in items:
+                bprint(item.title())
+            print()
+        elif action == 'stats' and statView:
+            pass # ______________________________________________
+        else:
+            bprint('That\'s an invalid action. Try again.')
+            print()
+
+def main():
+    bprint('Survival Sim alpha 1.0')
+    print()
+    bprint('Actions:')
+    bprint('\'gather\' to gather resources from the area.')
+    bprint('\'explore\' to try to discover the undiscovered.')
+    bprint('\'science\' to research new things.')
+    bprint('\'craft\' to select and craft unlocked items.')
+    bprint('\'rest\' to recover and let time pass.')
+    bprint('\'settings\' to open settings.')
+    print()
+    bprint('Press enter to start your journey.')
+    input()
+    bprint('You find yourself in a sparse forest, with plenty of visible wildlife.')
+    bprint('You don\'t know how you got here, but a more concerning issue is your survival.')
+    print()
+    while health > 0:
+        runTurn()
+        advanceTime(1)
+    bprint('GAME OVER', 0.4)
+
+if __name__ == '__main__':
+    main()
