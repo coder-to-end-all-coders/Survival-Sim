@@ -327,7 +327,65 @@ def runTurn():
             advanceTime(choice-1)
             print()
         elif action == 'settings':
-            pass # ______________________________________________
+            bprint('Settings menu:')
+            print()
+            bprint('1: status display <'+str(displayStatus)+'>')
+            bprint('2: text speed <'+str(textSpeed)+'>')
+            bprint('3: stat view <'+str(statView)+'>')
+            print()
+            while True:
+                bprint('(type index number of setting to edit.)')
+                choice = input('> ').lower().strip()
+                print()
+                if choice == '1' or choice == 'status display':
+                    bprint('Status display: <True> or <False>')
+                    while True:
+                        bprint('Please enter a valid value.')
+                        choice = input('> ').lower().strip()
+                        if choice[0] == 't':
+                            displayStatus = True
+                            bprint('Status display has been set to <True>.')
+                            break
+                        elif choice[0] == 'f':
+                            displayStatus = False
+                            bprint('Status display has been set to <False>.')
+                            break
+                if choice == '2' or choice == 'text speed':
+                    bprint('Text speed: <Slow>, <Fast>, or <Instant>')
+                    while True:
+                        bprint('Please enter a valid value.')
+                        choice = input('> ').lower().strip()
+                        if choice[0] == 's':
+                            textSpeed = 'slow'
+                            bprint('Text speed has been set to <Slow>.')
+                            break
+                        if choice[0] == 'f':
+                            textSpeed = 'fast'
+                            bprint('Text speed has been set to <Fast>.')
+                            break
+                        if choice[0] == 'i':
+                            textSpeed = 'instant'
+                            bprint('Text speed has been set to <Instant>.')
+                            break
+                if choice == '3' or choice == 'statView':
+                    bprint('Stat view: <True> or <False>')
+                    while True:
+                        bprint('Please enter a valid value.')
+                        choice = input('> ').lower().strip()
+                        if choice[0] == 't':
+                            statView = True
+                            bprint('Stat view has been set to <True>.')
+                            bprint('Type \'stats\' when prompted for an action command for dev-level stat viewer.')
+                            break
+                        elif choice[0] == 'f':
+                            statView = False
+                            bprint('Stat view has been set to <False>.')
+                            break
+                else:
+                    bprint('You can\'t do that. Try again.')
+                    print()
+                break
+            print()
         elif action == 'remind':
             bprint('Unlocked action commands:')
             for i in unlockedCommands:
@@ -351,7 +409,7 @@ def runTurn():
             print()
 
 def main():
-    bprint('Survival Sim alpha 1.0')
+    bprint('Survival Sim alpha 1.1')
     print()
     bprint('Actions:')
     bprint('\'gather\' to gather resources from the area.')
