@@ -403,13 +403,35 @@ def runTurn():
                 bprint(item.title())
             print()
         elif action == 'stats' and statView:
-            pass # ______________________________________________
+            bprint('Health: '+str(health))
+            bprint('Hunger: '+str(hunger))
+            bprint('Thirst: '+str(thirst))
+            print()
+            bprint('Resources: '+resources)
+            bprint('Items: '+items)
+            bprint('Science: '+str(science))
+            print()
+            bprint('Current time: '+str(currentTime)+' '+timeDetail)
+            bprint('Current day: '+str(day))
+            bprint('Current year: '+str(year))
+            print()
+            bprint('Gather efficiency: '+gatherEffeciency)
+            bprint('Explore efficiency: '+str(exploreEfficiency))
+            bprint('Science efficiency: '+str(scienceEfficiency))
+            print()
+            bprint('Unlocked research: '+unlockedResearch)
+            bprint('Unlocked recipes: '+unlockedRecipes)
+            print()
+            bprint('Status display: '+str(displayStatus))
+            bprint('Text speed: '+textSpeed)
+            bprint('Stat view: Of course it\'s True, what do you think you\'re looking at?')
+            print()
         else:
             bprint('That\'s an invalid action. Try again.')
             print()
 
 def main():
-    bprint('Survival Sim alpha 1.1')
+    bprint('Survival Sim alpha 1.2') # prev 1.2
     print()
     bprint('Actions:')
     bprint('\'gather\' to gather resources from the area.')
