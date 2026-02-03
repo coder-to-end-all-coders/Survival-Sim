@@ -12,8 +12,8 @@ scienceEfficiency = 1
 items = []
 itemRef = {'rock hatchet':[['gatherEfficiency', 'WOOD', .5]], 'wood club':[['combat', 1]]} # 'name':[[effect], [effect], [effect]]
 
-resources = {'WOOD':0, 'LEAVES':0, 'CLOTH':0, 'ROCK':0, 'ROPE':0}
-gatherEfficiency = {'WOOD':1, 'LEAVES':1, 'CLOTH':1, 'ROCK':1, 'ROPE':0}
+resources = {'WOOD':0, 'LEAVES':0, 'CLOTH':0, 'ROCK':0, 'ROPE':0, 'BERRIES':0}
+gatherEfficiency = {'WOOD':1, 'LEAVES':1, 'CLOTH':1, 'ROCK':1, 'ROPE':1, 'BERRIES':1}
 
 exploreEfficiency = .25
 
@@ -24,13 +24,15 @@ year = 1
 
 currentArea = 'Eastern Forest'
 
-areas = {'Eastern Forest':[{'WOOD':5, 'LEAVES':7.5, 'ROCK':2}, 0, {'Abandoned Cottage':random.random()*100}]} # 'name':[{resources}, exploration%, {locations}]
+areas = {'Eastern Forest':[{'WOOD':5, 'LEAVES':7.5, 'ROCK':2, 'BERRIES':1}, 0, {'Abandoned Cottage':random.random()*100}]} # 'name':[{resources}, exploration%, {locations}]
 
 unlockedResearch = [None]
 researchTree = {'rock hatchet':[[None], 5], 'wood club':[[None], 5]} # 'name':[['required research'], #science points]
 
 unlockedRecipes = ['rope']
 recipeRef = {'rope':[{'LEAVES':[5, 'm']}, 1, 'm'], 'rock hatchet':[{'WOOD':[5, 'm'], 'ROCK':[5, 'm'], 'ROPE':[2.5, 'm']}, 1, 'i'], 'wood club':[{'WOOD':[10, 'm'], 'LEAVES':[2.5, 'm']}, 1, 'i']} # 'name':[{'required material':#amount}, #amount per recipe, 'm (if material, or) i (if item)']
+
+foodRef = {'BERRIES':[5, 5]} # {'name':[#hunger, #thirst]}
 
 healthMessages = ['You\'re at death\'s door. You feel like you can\'t go on.', 'Everything hurts... you must stop the pain.', 'You are in very bad condition.', 'You\'re feeling dangerously uneasy.', 'You don\'t feel so good.', 'You could be feeling better.', 'You\'re not in your best condition.', 'You\'re feeling fine.', 'You feel great!', 'You\'re feeling better than ever!', 'You\'re feeling better than ever!']
 hungerMessages = ['You need food... you can\'t hold back your hunger.', 'You\'re starving. A sandwich would be great now.', 'You\'re pretty hungry. You should eat soon.', 'Your stomach is satisfied for now.', 'You\'re full! You wouldn\'t want to eat now.', 'You\'re full! You wouldn\'t want to eat now.']
@@ -80,6 +82,11 @@ def addResources(resource, amount):
         bprint('You have unlocked the \'resources\' action command.')
         bprint('Use it to see your resources.')
         unlockedCommands.append('resources')
+    if resource in foodRef and 'eat' not in unlockedCommands:
+        print()
+        bprint('You have unlocked the \'eat\' action command.')
+        bprint('Use it to eat food.')
+        unlockedCommands.append('eat')
 
 def addItem(item):
     global items
@@ -118,7 +125,7 @@ def reverseItemEffect(item):
             bprint('I think you forgot something...')
 
 def advanceTime(amount):
-    global currentTime, timeDetail, day, year
+    global currentTime, timeDetail, day, year, health, hunger, thirst
     currentTime += amount
     while currentTime >= 13:
         currentTime -= 12
@@ -130,6 +137,9 @@ def advanceTime(amount):
             while day >= 366:
                 day -= 365
                 year += 1
+    hunger -= 1 * (.9 + random.random() / 5)
+    thirst -= 1.5 * (.9 + random.random() / 5)
+    health -= .5 * (.9 + random.random() / 5)
 
 def runEncounter(name):
     if name == 'Abandoned Cottage':
@@ -145,7 +155,7 @@ def runEncounter(name):
         bprint('I think you forgot something...')
 
 def runTurn():
-    global resources, areas, science, unlockedResearch
+    global resources, areas, science, unlockedResearch, displayStatus, textSpeed, statView
     if displayStatus:
         bprint('Current status:')
         bprint(str(currentTime)+':00 '+timeDetail+', day #'+str(day)+', year #'+str(year))
@@ -325,6 +335,7 @@ def runTurn():
                     break
             bprint('You rest for '+str(choice)+' hours.')
             advanceTime(choice-1)
+            health += .75 * (.9 + random.random() / 5)
             print()
         elif action == 'settings':
             bprint('Settings menu:')
@@ -385,6 +396,41 @@ def runTurn():
                     bprint('You can\'t do that. Try again.')
                     print()
                 break
+            print()
+        elif action == 'eat' and 'eat' in unlockedCommands:
+            bprint('Your food:')
+            print()
+            possibleFood = []
+            for food in foodRef.keys():
+                if food in resources.keys() and resources[food] >= 1:
+                    bprint(food)
+                    possibleFood.append(food)
+            print()
+            while True:
+                bprint('Choose a food to eat or type (Quit) to quit.')
+                choice = input('> ').upper().strip()
+                if choice in possibleFood:
+                    print()
+                    break
+                else:
+                    print()
+                    bprint('Please choose one of the above choices. Try again.')
+                    print()
+            bprint('How much '+choice+' do you want to eat?')
+            while True:
+                try:
+                    amount = int(input('> ').lower().strip())
+                    print()
+                    if amount < 0:
+                        bprint('You can\'t do that. Try Again.')
+                    else:
+                        break
+                except ValueError:
+                    print()
+                    bprint('Please enter an integer. Try again.')
+            bprint('You eat '+str(amount)+' '+choice+'.')
+            hunger += foodRef[choice][0] * amount * (.9 + random.random() / 5)
+            thirst += foodRef[choice][1] * amount * (.9 + random.random() / 5)
             print()
         elif action == 'remind':
             bprint('Unlocked action commands:')
