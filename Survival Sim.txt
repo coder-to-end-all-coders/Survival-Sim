@@ -155,7 +155,7 @@ def runEncounter(name):
         bprint('I think you forgot something...')
 
 def runTurn():
-    global resources, areas, science, unlockedResearch, displayStatus, textSpeed, statView
+    global resources, areas, health, hunger, thirst, science, unlockedResearch, displayStatus, textSpeed, statView
     if displayStatus:
         bprint('Current status:')
         bprint(str(currentTime)+':00 '+timeDetail+', day #'+str(day)+', year #'+str(year))
@@ -477,7 +477,7 @@ def runTurn():
             print()
 
 def main():
-    bprint('Survival Sim alpha 1.2') # prev 1.2
+    bprint('Survival Sim alpha 1.2.1') # prev 1.2.1
     print()
     bprint('Actions:')
     bprint('\'gather\' to gather resources from the area.')
