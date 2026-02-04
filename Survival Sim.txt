@@ -4,16 +4,19 @@ health = 75.0
 hunger = 75.0
 thirst = 75.0
 
+death = ''
+
 unlockedCommands = ['gather', 'explore', 'science', 'craft', 'rest', 'settings', 'remind']
 
 science = 0.0
 scienceEfficiency = 1
 
 items = []
-itemRef = {'rock hatchet':[['gatherEfficiency', 'WOOD', .5]], 'wood club':[['combat', 1]]} # 'name':[[effect], [effect], [effect]]
+itemRef = {'rock hatchet':[['gatherEfficiency', 'WOOD', .5]], 'wood club':[['combat', 1]], 'wood bucket':[['storage', 'WATER', 5]]} # 'name':[[effect], [effect], [effect]]
 
-resources = {'WOOD':0, 'LEAVES':0, 'CLOTH':0, 'ROCK':0, 'ROPE':0, 'BERRIES':0}
-gatherEfficiency = {'WOOD':1, 'LEAVES':1, 'CLOTH':1, 'ROCK':1, 'ROPE':1, 'BERRIES':1}
+resources = {'WOOD':0, 'LEAVES':0, 'CLOTH':0, 'ROCK':0, 'ROPE':0, 'BERRIES':0, 'WATER':0}
+gatherEfficiency = {'WOOD':1, 'LEAVES':1, 'CLOTH':1, 'ROCK':1, 'ROPE':1, 'BERRIES':1, 'WATER':1}
+resourceStorage = {'WATER':0}
 
 exploreEfficiency = .25
 
@@ -24,19 +27,19 @@ year = 1
 
 currentArea = 'Eastern Forest'
 
-areas = {'Eastern Forest':[{'WOOD':5, 'LEAVES':7.5, 'ROCK':2, 'BERRIES':1}, 0, {'Abandoned Cottage':random.random()*100}]} # 'name':[{resources}, exploration%, {locations}]
+areas = {'Eastern Forest':[{'WOOD':5, 'LEAVES':7.5, 'ROCK':2, 'BERRIES':1, 'WATER':10}, 0, {'Abandoned Cottage':random.random()*100}]} # 'name':[{resources}, exploration%, {locations}]
 
 unlockedResearch = [None]
 researchTree = {'rock hatchet':[[None], 5], 'wood club':[[None], 5]} # 'name':[['required research'], #science points]
 
-unlockedRecipes = ['rope']
-recipeRef = {'rope':[{'LEAVES':[5, 'm']}, 1, 'm'], 'rock hatchet':[{'WOOD':[5, 'm'], 'ROCK':[5, 'm'], 'ROPE':[2.5, 'm']}, 1, 'i'], 'wood club':[{'WOOD':[10, 'm'], 'LEAVES':[2.5, 'm']}, 1, 'i']} # 'name':[{'required material':#amount}, #amount per recipe, 'm (if material, or) i (if item)']
+unlockedRecipes = ['rope', 'wood bucket']
+recipeRef = {'rope':[{'LEAVES':[5, 'm']}, 1, 'm'], 'rock hatchet':[{'WOOD':[5, 'm'], 'ROCK':[5, 'm'], 'ROPE':[2.5, 'm']}, 1, 'i'], 'wood club':[{'WOOD':[10, 'm'], 'LEAVES':[2.5, 'm']}, 1, 'i'], 'wood bucket':[{'WOOD':[10, 'm'], 'ROPE':[2.5, 'm']}, 1, 'i']} # 'name':[{'required material':#amount}, #amount per recipe, 'm (if material, or) i (if item)']
 
 foodRef = {'BERRIES':[5, 5]} # {'name':[#hunger, #thirst]}
 
 healthMessages = ['You\'re at death\'s door. You feel like you can\'t go on.', 'Everything hurts... you must stop the pain.', 'You are in very bad condition.', 'You\'re feeling dangerously uneasy.', 'You don\'t feel so good.', 'You could be feeling better.', 'You\'re not in your best condition.', 'You\'re feeling fine.', 'You feel great!', 'You\'re feeling better than ever!', 'You\'re feeling better than ever!']
 hungerMessages = ['You need food... you can\'t hold back your hunger.', 'You\'re starving. A sandwich would be great now.', 'You\'re pretty hungry. You should eat soon.', 'Your stomach is satisfied for now.', 'You\'re full! You wouldn\'t want to eat now.', 'You\'re full! You wouldn\'t want to eat now.']
-thirstMessages = ['You need water. You won\'t last any longer without it.', 'You\'re dehydrated. You\'ll need a drink soon.', 'You\'re a bit thirsty.', 'You don\'t feel much need for water right now.', 'You\'re well hydrated, and are nowhere near thirsty.']
+thirstMessages = ['You need water. You won\'t last any longer without it.', 'You\'re dehydrated. You\'ll need a drink soon.', 'You\'re a bit thirsty.', 'You don\'t feel much need for water right now.', 'You\'re well hydrated, and are nowhere near thirsty.', 'You\'re well hydrated, and are nowhere near thirsty.']
 
 displayStatus = True # display status at start of turn
 textSpeed = 'instant' # system done
@@ -46,6 +49,7 @@ if statView:
     unlockedCommands.append('stats')
 
 def bprint(text, speed=1):
+    global textSpeed
     if textSpeed == 'fast':
         print(text, end='')
     elif textSpeed == 'instant':
@@ -76,6 +80,9 @@ def completeResearch(research):
 def addResources(resource, amount):
     global resources
     resources[resource] += amount
+    if resources[resource] > resourceStorage[resource]:
+        resources[resource] = resourceStorage[resource]
+        bprint('You got '+resource+' but you didn\'t have enough storage for it.')
     bprint('You now have '+shortNum(resources[resource])+' '+resource+'. (+'+shortNum(amount)+')')
     if 'resources' not in unlockedCommands:
         print()
@@ -111,6 +118,8 @@ def itemEffect(item):
             gatherEfficiency[effect[1]] += effect[2]
         elif effect[0] == 'combat':
             pass # add combat stat when system is done ______________________________________________
+        elif effect[0] == 'storage':
+            resourceStorage[effect[1]] += effect[2]
         else:
             bprint('I think you forgot something...')
 
@@ -121,11 +130,15 @@ def reverseItemEffect(item):
             gatherEfficiency[effect[1]] -= effect[2]
         elif effect[0] == 'combat':
             pass # add combat stat when system is done ______________________________________________
+        elif effect[0] == 'storage':
+            resourceStorage[effect[1]] += effect[2]
+            if resources[effect[1]] > resourceStorage[effect[1]]:
+                resources[effect[1]] = resourceStorage[effect[1]]
         else:
             bprint('I think you forgot something...')
 
 def advanceTime(amount):
-    global currentTime, timeDetail, day, year, health, hunger, thirst
+    global currentTime, timeDetail, day, year, health, hunger, thirst, death
     currentTime += amount
     while currentTime >= 13:
         currentTime -= 12
@@ -140,6 +153,12 @@ def advanceTime(amount):
     hunger -= 1 * (.9 + random.random() / 5)
     thirst -= 1.5 * (.9 + random.random() / 5)
     health -= .5 * (.9 + random.random() / 5)
+    if hunger <= 0.0:
+        death = 'starvation'
+    if thirst <= 0.0:
+        death = 'dehydration'
+    if health <= 0.0:
+        death = 'bad health'
 
 def runEncounter(name):
     if name == 'Abandoned Cottage':
@@ -171,15 +190,28 @@ def runTurn():
         if action == 'gather':
             bprint('Available resources:')
             for resource in areas[currentArea][0].keys():
-                bprint(resource)
+                if gatherEfficiency[resource] != 0:
+                    if resource in resourceStorage.keys():
+                        if resourceStorage[resource] > resources[resource]:
+                            bprint(resource)
+                    else:
+                        bprint(resource)
             print()
             bprint('Which resource would you like to gather?')
             choice = ''
-            while choice not in areas[currentArea][0].keys():
+            while True:
                 choice = input('> ').upper().strip()
                 print()
                 if choice not in areas[currentArea][0].keys():
                     bprint('That is not a valid resource. Try again.')
+                else:
+                    if choice in resourceStorage.keys():
+                        if resourceStorage[choice] > resources[choice]:
+                            break
+                        else:
+                            bprint('You do not have enough storage.')
+                    else:
+                        break
             bprint('You spend time gathering '+choice+' from the area.')
             increase = areas[currentArea][0][choice] * gatherEfficiency[choice] * (.9 + random.random() / 5)
             addResources(choice, increase)
@@ -281,6 +313,7 @@ def runTurn():
                                 taken = 0
                                 try:
                                     items.remove(ingredient.title())
+                                    reverseItemEffect(ingredient)
                                     taken += 1
                                 except ValueError:
                                     valid = False
@@ -335,7 +368,11 @@ def runTurn():
                     break
             bprint('You rest for '+str(choice)+' hours.')
             advanceTime(choice-1)
-            health += .75 * (.9 + random.random() / 5)
+            print()
+            addScience(.25 * choice * (.9 + random.random() / 5))
+            health += 1.5 * (.9 + random.random() / 5)
+            if health > 100.0:
+                health = 100.0
             print()
         elif action == 'settings':
             bprint('Settings menu:')
@@ -431,6 +468,10 @@ def runTurn():
             bprint('You eat '+str(amount)+' '+choice+'.')
             hunger += foodRef[choice][0] * amount * (.9 + random.random() / 5)
             thirst += foodRef[choice][1] * amount * (.9 + random.random() / 5)
+            if hunger > 100.0:
+                hunger = 100.0
+            if thirst > 100.0:
+                thirst = 100.0
             print()
         elif action == 'remind':
             bprint('Unlocked action commands:')
@@ -477,7 +518,10 @@ def runTurn():
             print()
 
 def main():
-    bprint('Survival Sim alpha 1.2.1') # prev 1.2.1
+    bprint('Survival Sim alpha 1.2.2') # prev 1.2.2
+    print()
+    bprint('As this game is in alpha, feel free to inform me of any inconsistencies or bugs.')
+    bprint('I can also take ideas for new features.')
     print()
     bprint('Actions:')
     bprint('\'gather\' to gather resources from the area.')
@@ -492,10 +536,13 @@ def main():
     bprint('You find yourself in a sparse forest, with plenty of visible wildlife.')
     bprint('You don\'t know how you got here, but a more concerning issue is your survival.')
     print()
-    while health > 0:
+    while True:
         runTurn()
         advanceTime(1)
+        if death != '':
+            break
     bprint('GAME OVER', 0.4)
+    bprint('You died of '+death+'.')
 
 if __name__ == '__main__':
     main()
