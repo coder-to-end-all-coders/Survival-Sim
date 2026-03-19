@@ -11,7 +11,7 @@ TODO (for 1.3?):
 - add more to bprint (maybe make it affected by sanity)
 
 CHANGELOG:
-- fixed demanding bugs
+- fixed demanding bugs (Thanks playtesters!)
 '''
 
 health = 75.0
@@ -193,7 +193,7 @@ def completeResearch(research):
     elif research == 'crude machete':
         unlockedRecipes.append('crude machete')
     elif research == 'reinforced bucket':
-        unlockedRecipes.append('reinfoced bucket')
+        unlockedRecipes.append('reinforced bucket')
 
 def addResources(resource, amount):
     global resources
@@ -785,53 +785,56 @@ def runTurn():
                     possibleFood.append(food)
             print()
             while True:
-                bprint('Choose a food to eat or type (Quit) to quit.')
+                bprint('Choose a food to eat or type (Q)uit to quit.')
                 choice = input('> ').upper().strip()
                 if choice in possibleFood:
                     print()
+                    break
+                elif choice[0] == 'Q':
                     break
                 else:
                     print()
                     bprint('Please choose one of the above choices. Try again.')
                     print()
-            bprint('How much '+choice+' do you want to eat?')
-            while True:
-                try:
-                    amount = int(input('> ').lower().strip())
+            if choice[0] != 'Q':
+                bprint('How much '+choice+' do you want to eat?')
+                while True:
+                    try:
+                        amount = int(input('> ').lower().strip())
+                        print()
+                        if amount < 0:
+                            bprint('You can\'t do that. Try Again.')
+                        if amount > resources[choice]:
+                            bprint('You only have '+str(resources[choice])+' '+choice+'. You can\'t eat '+str(amount)+'.')
+                        else:
+                            break
+                    except ValueError:
+                        print()
+                        bprint('Please enter an integer. Try again.')
+                resources[choice] -= amount
+                bprint('You eat '+str(amount)+' '+choice+'.')
+                hunger += foodRef[choice][0] * amount * (.9 + random.random() / 5)
+                thirst += foodRef[choice][1] * amount * (.9 + random.random() / 5)
+                if foodRef[choice][2] != None:
+                    for condition in foodRef[choice][2].keys():
+                        for i in range(amount):
+                            if random.random() <= foodRef[choice][2][condition]:
+                                prevValue = conditions[condition]
+                                conditions[condition] += 1 * (.9 + random.random() / 5)
+                                if conditions[condition] >= math.ceil(prevValue):
+                                    conditionEffect(condition)
+                                print()
+                                bprint('You have contracted '+condition+'.')
+                if hunger > 100.0:
+                    resources[choice] += (hunger - 100) / foodRef[choice][0]
                     print()
-                    if amount < 0:
-                        bprint('You can\'t do that. Try Again.')
-                    if amount > resources[choice]:
-                        bprint('You only have '+str(resources[choice])+' '+choice+'. You can\'t eat '+str(amount)+'.')
-                    else:
-                        break
-                except ValueError:
+                    bprint('You didn\'t need to eat all that, so any unnecessary food was returned.')
+                    hunger = 100.0
+                elif thirst > 100.0: # make a better system for food return ______________________________________________
+                    resources[choice] += (thirst - 100) / foodRef[choice][1]
                     print()
-                    bprint('Please enter an integer. Try again.')
-            resources[choice] -= amount
-            bprint('You eat '+str(amount)+' '+choice+'.')
-            hunger += foodRef[choice][0] * amount * (.9 + random.random() / 5)
-            thirst += foodRef[choice][1] * amount * (.9 + random.random() / 5)
-            if foodRef[choice][2] != None:
-                for condition in foodRef[choice][2].keys():
-                    for i in range(amount):
-                        if random.random() <= foodRef[choice][2][condition]:
-                            prevValue = conditions[condition]
-                            conditions[condition] += 1 * (.9 + random.random() / 5)
-                            if conditions[condition] >= math.ceil(prevValue):
-                                conditionEffect(condition)
-                            print()
-                            bprint('You have contracted '+condition+'.')
-            if hunger > 100.0:
-                resources[choice] += (hunger - 100) / foodRef[choice][0]
-                print()
-                bprint('You didn\'t need to eat all that, so any unnecessary food was returned.')
-                hunger = 100.0
-            elif thirst > 100.0: # make a better system for food return ______________________________________________
-                resources[choice] += (thirst - 100) / foodRef[choice][1]
-                print()
-                bprint('You didn\'t need to eat all that, so any unnecessary food was returned.')
-                thirst = 100.0
+                    bprint('You didn\'t need to eat all that, so any unnecessary food was returned.')
+                    thirst = 100.0
             print()
         elif action == 'remind':
             bprint('Unlocked action commands:')
