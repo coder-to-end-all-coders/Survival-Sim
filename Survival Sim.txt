@@ -56,7 +56,7 @@ itemRef = {
 'sieve table':[['unlockRecipe', 'COAL']],
 'reinforced bucket':[['storage', 'SEDIMENT', 20], ['gatherEfficiency', 'SEDIMENT', 1]]
 } # 'name':[[effect], [effect], [effect]]
-effectTracker = {('gatherEfficiency', 'WOOD'):[], ('gatherEfficiency', 'HIDE'):[], ('gatherEfficiency', 'RAW MEAT'):[], 'combat':[], 'exploreEfficiency':[]}
+effectTracker = {('gatherEfficiency', 'WOOD'):[], ('gatherEfficiency', 'HIDE'):[], ('gatherEfficiency', 'RAW MEAT'):[], ('gatherEfficiency', 'LEAVES'):[], ('gatherEfficiency', 'BERRIES'):[], ('gatherEfficiency', 'SEDIMENT'):[], ('gatherEfficiency', 'SCRAP METAL'):[], 'combat':[], 'exploreEfficiency':[]}
 
 resources = {'WOOD':0, 'LEAVES':0, 'CLOTH':0, 'ROCK':0, 'ROPE':0, 'BERRIES':0, 'DIRTY WATER':0, 'HIDE':0, 'RAW MEAT':0, 'COOKED MEAT':0, 'WATER':0, 'BRICK':0, 'SCRAP METAL':0, 'WOOD BOARD':0, 'SEDIMENT':0, 'COAL':0}
 gatherEfficiency = {'WOOD':1, 'LEAVES':1, 'CLOTH':1, 'ROCK':1, 'ROPE':1, 'BERRIES':1, 'DIRTY WATER':1, 'HIDE':0, 'RAW MEAT':0, 'COOKED MEAT':0, 'WATER':1, 'BRICK':1, 'SCRAP METAL':.5, 'WOOD BOARD':0, 'SEDIMENT':.1, 'COAL':0}
@@ -240,7 +240,10 @@ def itemEffect(item):
     for effect in itemRef[item]:
         valid = True
         if not effect[0] == 'storage':
-            if effect[0] in ['gatherEfficiency']: # add more effects here ______________________________________________
+            if effect[0] == 'unlockRecipe':
+                if effect[1] in unlockedRecipes:
+                    valid = False
+            elif effect[0] in ['gatherEfficiency']: # add more effects here ______________________________________________
                 if item in effectTracker[(effect[0], effect[1])]:
                     valid = False
                 else:
@@ -981,7 +984,7 @@ def runTurn():
             print()
 
 def main():
-    bprint('Survival Sim alpha 1.3.1') # prev 1.3.1
+    bprint('Survival Sim alpha 1.3.2') # prev 1.3.2
     print()
     bprint('As this game is in alpha, please make sure to inform me of any inconsistencies or bugs.')
     bprint('I can also take ideas for new features. Any input is much appreciated.')
