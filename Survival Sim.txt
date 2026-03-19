@@ -11,23 +11,7 @@ TODO (for 1.3?):
 - add more to bprint (maybe make it affected by sanity)
 
 CHANGELOG:
-- added a changelog (good idea, me!)
-- added sanity
-- added weather
-- added random event system
-- added specialized death message system
-- added misc. items, recipes, resarch, and materials
-- added a condition system (+dysentery, +salmonella, +hypothermia)
-- made 'slow' text speed not so slow (and set it back to the default text speed)
-- renamed WATER to DIRTY WATER
-- added food stat gain summaries
-- added item descriptions
-- fixed stat view
-- fixed location discovery system
-- fixed and reworked time-based stat decrease
-- fixed eating (because apparently it wasn't actually eating the food before)
-- fixed item effect stacking
-- misc. other minor fixes
+- fixed demanding bugs
 '''
 
 health = 75.0
@@ -142,7 +126,7 @@ hungerMessages = ['You need food... you can\'t hold back your hunger.', 'You\'re
 thirstMessages = ['You need water. You won\'t last any longer without it.', 'You\'re dehydrated. You\'ll need a drink soon.', 'You\'re a bit thirsty.', 'You don\'t feel much need for water right now.', 'You\'re well hydrated, and are nowhere near thirsty.', 'You\'re well hydrated, and are nowhere near thirsty.']
 
 displayStatus = True # display status at start of turn
-textSpeed = 'instant' # change to 'slow' on release ______________________________________________
+textSpeed = 'slow' # change to 'slow' on release ______________________________________________
 statView = False # type 'stats' to see exact numbers
 
 if statView:
@@ -360,7 +344,6 @@ def advanceTime(amount):
             while day >= 366:
                 day -= 365
                 year += 1
-    resources['RAW MEAT'] *= .975 * amount # maybe make a better system for food decay ______________________________________________
     hunger -= hungerDecrease * (.9 + random.random() / 5) * amount
     thirst -= thirstDecrease * (.9 + random.random() / 5) * amount
     health -= healthDecrease * (.9 + random.random() / 5) * amount
@@ -368,6 +351,7 @@ def advanceTime(amount):
         possibleDeath = 'bad health'
     sanity -= 1 * (.9 + random.random() / 5) * amount
     for i in range(amount):
+        resources['RAW MEAT'] *= .975 # maybe make a better system for food decay ______________________________________________
         for condition in conditions.keys():
             if conditions[condition] > 0:
                 prevValue = conditions[condition]
@@ -534,6 +518,7 @@ def runTurn():
             print()
             addScience(.1 * (.9 + random.random() / 5) * thing)
             gatherEfficiency[choice] += random.random() / 50
+            advanceTime(thing - 1)
             print()
             break
         elif action == 'explore':
@@ -570,6 +555,7 @@ def runTurn():
                                 unlockedCommands.append('travel')
                             discoveredAreas.append(area)
             addScience(.5 * (.9 + random.random() / 5) * thing)
+            advanceTime(thing - 1)
             print()
             break
         elif action == 'science':
@@ -995,7 +981,7 @@ def runTurn():
             print()
 
 def main():
-    bprint('Survival Sim alpha 1.3.0') # prev 1.2.2
+    bprint('Survival Sim alpha 1.3.1') # prev 1.3.1
     print()
     bprint('As this game is in alpha, please make sure to inform me of any inconsistencies or bugs.')
     bprint('I can also take ideas for new features. Any input is much appreciated.')
